@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-title" content="SOMMa">
-    <title>SOMMa - Wine Sommelier</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
@@ -232,11 +232,46 @@
                     </div>
                 </div>
 
+                <div style="background: white; border: 2px solid #22c55e; border-radius: 1rem; padding: 1.5rem; margin-bottom: 1.5rem;">
+                    <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                        <span style="color: #22c55e; margin-right: 0.75rem; font-size: 1.5rem;">📊</span>
+                        <h3 style="font-size: 1.125rem; font-weight: 600;">Upload Excel Inventory</h3>
+                        <span style="background: #dcfce7; color: #15803d; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; margin-left: 0.5rem;">EASY</span>
+                    </div>
+                    <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.875rem;">
+                        Export your inventory from Lightspeed as Excel and upload it here.
+                    </p>
+                    
+                    <div style="margin-bottom: 0.75rem;">
+                        <label style="display: block; font-weight: 500; color: #374151; font-size: 0.875rem; margin-bottom: 0.25rem;">Choose Excel File (.xlsx)</label>
+                        <input type="file" accept=".xlsx,.xls" id="excel-file" onchange="handleExcelUpload()" style="width: 100%; padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 0.5rem; font-size: 1rem;">
+                    </div>
+                    
+                    <div style="background: #f0fdf4; color: #15803d; padding: 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; margin-bottom: 1rem; line-height: 1.4;">
+                        <strong>📋 Expected Excel Columns:</strong><br>
+                        • <strong>Name</strong> (Product Name)<br>
+                        • <strong>Price</strong> (Selling Price)<br>
+                        • <strong>Category</strong> (Wine/Spirits/Red Wine/Whisky etc.)<br>
+                        • <strong>Stock</strong> (Quantity Available)<br>
+                        • <strong>Description</strong> (Product Details)<br>
+                        <br>
+                        <strong>📤 How to export from Lightspeed:</strong><br>
+                        1. Go to <strong>Inventory → Products</strong><br>
+                        2. Click <strong>Export</strong> button<br>
+                        3. Choose <strong>Excel format</strong><br>
+                        4. Download and upload here
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="document.getElementById('excel-file').click()">
+                        📤 Choose Excel File
+                    </button>
+                </div>
+
                 <div style="background: white; border: 2px solid #3b82f6; border-radius: 1rem; padding: 1.5rem; margin-bottom: 1.5rem;">
                     <div style="display: flex; align-items: center; margin-bottom: 1rem;">
-                        <span style="color: #3b82f6; margin-right: 0.75rem; font-size: 1.5rem;">📊</span>
+                        <span style="color: #3b82f6; margin-right: 0.75rem; font-size: 1.5rem;">🔗</span>
                         <h3 style="font-size: 1.125rem; font-weight: 600;">Connect with Personal Token</h3>
-                        <span style="background: #dcfce7; color: #15803d; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; margin-left: 0.5rem;">EASY</span>
+                        <span style="background: #dbeafe; color: #1d4ed8; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; margin-left: 0.5rem;">COMING SOON</span>
                     </div>
                     <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.875rem;">
                         Connect to your Lightspeed X inventory with just your store URL and Personal Token.
@@ -288,7 +323,7 @@
 
     <script>
         // Sample inventory data
-        const inventory = [
+        let inventory = [
             {
                 id: 1, name: "Château Margaux 2015", price: 450, type: "wine",
                 origin: "France", vintage: "2015", rating: "★★★★★ 4.9",
@@ -315,6 +350,7 @@
             }
         ];
 
+        let inventorySource = 'demo';
         let isListening = false;
 
         // Screen Management
@@ -334,7 +370,111 @@
 
         function showSplash() { showScreen('splash-screen'); }
         function showCategories() { showScreen('category-screen'); }
-        function showResults() { showScreen('results-screen'); }
+        // Excel Upload Handler
+        function handleExcelUpload() {
+            const fileInput = document.getElementById('excel-file');
+            const file = fileInput.files[0];
+            const result = document.getElementById('connection-result');
+            
+            if (!file) return;
+            
+            // Show loading message
+            result.textContent = '📊 Processing your Excel file...';
+            result.style.background = '#dbeafe';
+            result.style.borderColor = '#3b82f6';
+            result.style.color = '#1d4ed8';
+            result.style.display = 'block';
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const sheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[sheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                    
+                    if (jsonData.length === 0) {
+                        throw new Error('Excel file appears to be empty');
+                    }
+                    
+                    // Map Excel data to SOMMa format
+                    const mappedInventory = jsonData.map((row, index) => {
+                        // Flexible column mapping
+                        const name = row.Name || row.Product || row.Item || row['Product Name'] || `Product ${index + 1}`;
+                        const price = parseFloat(row.Price || row.Cost || row['Retail Price'] || row['Sale Price'] || 0);
+                        const category = (row.Category || row.Type || row.Classification || '').toString().toLowerCase();
+                        const stock = parseInt(row.Stock || row.Quantity || row.Inventory || row.QOH || 0);
+                        const description = row.Description || row.Notes || row.Details || '';
+                        
+                        // Determine if it's wine or spirits
+                        const isSpirit = category.includes('spirit') || 
+                                        category.includes('whisky') || category.includes('whiskey') ||
+                                        category.includes('vodka') || category.includes('gin') ||
+                                        category.includes('rum') || category.includes('cognac') ||
+                                        category.includes('tequila') || category.includes('liquor') ||
+                                        name.toLowerCase().includes('whisky') || 
+                                        name.toLowerCase().includes('vodka');
+                        
+                        // Extract flavors from description
+                        const flavorKeywords = ['smooth', 'bold', 'crisp', 'sweet', 'dry', 'rich', 'complex', 'fruity', 'earthy', 'spicy', 'vanilla', 'oak', 'citrus'];
+                        const detectedFlavors = flavorKeywords.filter(keyword => 
+                            (description + ' ' + name).toLowerCase().includes(keyword)
+                        ).map(flavor => flavor.charAt(0).toUpperCase() + flavor.slice(1));
+                        
+                        return {
+                            id: index + 1,
+                            name: name,
+                            price: price,
+                            type: isSpirit ? 'spirits' : 'wine',
+                            origin: row.Origin || row.Region || row.Country || 'Unknown',
+                            vintage: row.Vintage || row.Year || (isSpirit ? 'Premium' : '2023'),
+                            rating: '★★★★☆ 4.0',
+                            description: description || name,
+                            flavors: detectedFlavors.length > 0 ? detectedFlavors : (isSpirit ? ['Smooth'] : ['Classic']),
+                            stock: stock,
+                            alcohol: parseFloat(row.ABV || row.Alcohol || row['Alcohol %'] || (isSpirit ? 40 : 13)),
+                            icon: isSpirit ? '🥃' : '🍷'
+                        };
+                    }).filter(item => item.stock > 0 && item.price > 0); // Only include items with stock and price
+                    
+                    if (mappedInventory.length === 0) {
+                        throw new Error('No valid products found with stock and prices');
+                    }
+                    
+                    // Update inventory
+                    inventory = mappedInventory;
+                    inventorySource = 'excel';
+                    
+                    // Update status display
+                    updateInventoryStatus();
+                    
+                    // Show success message
+                    result.textContent = `✅ Success! Loaded ${mappedInventory.length} products from your Excel file. Voice recognition now uses your real inventory!`;
+                    result.style.background = '#ecfdf5';
+                    result.style.borderColor = '#22c55e';
+                    result.style.color = '#15803d';
+                    
+                } catch (error) {
+                    result.textContent = `❌ Error reading Excel file: ${error.message}. Please check the file format and try again.`;
+                    result.style.background = '#fef2f2';
+                    result.style.borderColor = '#ef4444';
+                    result.style.color = '#dc2626';
+                }
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+        
+        // Update inventory status display
+        function updateInventoryStatus() {
+            const statusText = document.querySelector('[style*="font-size: 0.875rem; color: #1d4ed8;"]');
+            if (statusText) {
+                const sourceText = inventorySource === 'demo' ? 'Demo Inventory' : 
+                                 inventorySource === 'excel' ? 'Excel File' : 'Connected API';
+                statusText.textContent = `${sourceText} (${inventory.length} items)`;
+            }
+        }
         function showInventory() { showScreen('inventory-screen'); }
 
         // Connect to Lightspeed (placeholder function)
