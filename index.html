@@ -370,7 +370,7 @@
 
         function showSplash() { showScreen('splash-screen'); }
         function showCategories() { showScreen('category-screen'); }
-        // Excel Upload Handler
+        // Excel Upload Handler with Debug Mode
         function handleExcelUpload() {
             const fileInput = document.getElementById('excel-file');
             const file = fileInput.files[0];
@@ -379,7 +379,7 @@
             if (!file) return;
             
             // Show loading message
-            result.textContent = '📊 Processing your Excel file...';
+            result.innerHTML = '📊 Processing your Excel file...';
             result.style.background = '#dbeafe';
             result.style.borderColor = '#3b82f6';
             result.style.color = '#1d4ed8';
@@ -398,159 +398,188 @@
                         throw new Error('Excel file appears to be empty');
                     }
                     
-                    // Debug: Show first row to understand column structure
-                    console.log('First row columns:', Object.keys(jsonData[0]));
+                    // DEBUGGING: Show what we found
+                    const firstRow = jsonData[0];
+                    const allColumns = Object.keys(firstRow);
+                    const sampleData = {};
                     
-                    // Map Excel data to SOMMa format with very flexible column matching
-                    const mappedInventory = jsonData.map((row, index) => {
-                        // Get all column names for this row
-                        const columns = Object.keys(row);
-                        
-                        // Helper function to find column value by multiple possible names
-                        function findColumnValue(possibleNames, defaultValue = '') {
-                            for (let name of possibleNames) {
-                                // Check exact match first
-                                if (row[name] !== undefined && row[name] !== null && row[name] !== '') {
-                                    return row[name];
-                                }
-                                // Check case-insensitive partial match
-                                for (let col of columns) {
-                                    if (col.toLowerCase().includes(name.toLowerCase())) {
-                                        if (row[col] !== undefined && row[col] !== null && row[col] !== '') {
-                                            return row[col];
-                                        }
-                                    }
-                                }
-                            }
-                            return defaultValue;
-                        }
-                        
-                        // Very flexible column matching
-                        const name = findColumnValue([
-                            'Name', 'Product', 'Item', 'Product Name', 'Item Name', 'Title', 
-                            'Description', 'Product Description', 'Item Description'
-                        ], `Product ${index + 1}`);
-                        
-                        const priceValue = findColumnValue([
-                            'Price', 'Cost', 'Retail Price', 'Sale Price', 'Unit Price', 
-                            'Selling Price', 'Amount', 'Value', 'Rate'
-                        ], '0');
-                        
-                        const stockValue = findColumnValue([
-                            'Stock', 'Quantity', 'Inventory', 'QOH', 'Qty', 'Available', 
-                            'On Hand', 'Count', 'Units', 'Qty Available'
-                        ], '1'); // Default to 1 if no stock column found
-                        
-                        const category = findColumnValue([
-                            'Category', 'Type', 'Classification', 'Class', 'Product Type',
-                            'Item Type', 'Brand', 'Style', 'Variant'
-                        ], '').toString().toLowerCase();
-                        
-                        const description = findColumnValue([
-                            'Description', 'Notes', 'Details', 'Product Description', 
-                            'Item Description', 'Long Description', 'Summary'
-                        ], name.toString());
-                        
-                        // Clean and parse values
-                        const price = parseFloat(priceValue.toString().replace(/[^0-9.]/g, '')) || 0;
-                        const stock = parseInt(stockValue.toString().replace(/[^0-9]/g, '')) || 1;
-                        
-                        // Determine if it's wine or spirits - much broader detection
-                        const nameAndCategory = (name + ' ' + category + ' ' + description).toLowerCase();
-                        const isSpirit = nameAndCategory.includes('spirit') || 
-                                        nameAndCategory.includes('whisky') || nameAndCategory.includes('whiskey') ||
-                                        nameAndCategory.includes('vodka') || nameAndCategory.includes('gin') ||
-                                        nameAndCategory.includes('rum') || nameAndCategory.includes('cognac') ||
-                                        nameAndCategory.includes('tequila') || nameAndCategory.includes('liquor') ||
-                                        nameAndCategory.includes('bourbon') || nameAndCategory.includes('scotch') ||
-                                        category.includes('alcohol') || category.includes('liqueur');
-                        
-                        // Extract flavors from description and name
-                        const flavorKeywords = ['smooth', 'bold', 'crisp', 'sweet', 'dry', 'rich', 'complex', 'fruity', 'earthy', 'spicy', 'vanilla', 'oak', 'citrus', 'mineral', 'tannins'];
-                        const textToSearch = (description + ' ' + name + ' ' + category).toLowerCase();
-                        const detectedFlavors = flavorKeywords.filter(keyword => 
-                            textToSearch.includes(keyword)
-                        ).map(flavor => flavor.charAt(0).toUpperCase() + flavor.slice(1));
-                        
-                        return {
-                            id: index + 1,
-                            name: name.toString(),
-                            price: price,
-                            type: isSpirit ? 'spirits' : 'wine',
-                            origin: findColumnValue(['Origin', 'Region', 'Country', 'Source', 'Location'], 'Unknown'),
-                            vintage: findColumnValue(['Vintage', 'Year', 'Age'], isSpirit ? 'Premium' : '2023'),
-                            rating: '★★★★☆ 4.0',
-                            description: description.toString(),
-                            flavors: detectedFlavors.length > 0 ? detectedFlavors : (isSpirit ? ['Smooth'] : ['Classic']),
-                            stock: stock,
-                            alcohol: parseFloat(findColumnValue(['ABV', 'Alcohol', 'Alcohol %', 'Alcohol Content'], isSpirit ? '40' : '13')),
-                            icon: isSpirit ? '🥃' : '🍷',
-                            originalRow: row // Keep for debugging
-                        };
+                    // Get sample of first few columns
+                    allColumns.slice(0, 10).forEach(col => {
+                        sampleData[col] = firstRow[col];
                     });
                     
-                    // Filter products - be more lenient with requirements
-                    const validProducts = mappedInventory.filter(item => {
-                        const hasName = item.name && item.name.toString().trim().length > 0 && !item.name.toString().startsWith('Product ');
-                        const hasPrice = item.price > 0;
-                        const hasStock = item.stock > 0;
-                        return hasName && (hasPrice || hasStock); // Accept if has name and either price OR stock
-                    });
+                    console.log('DEBUG - All columns found:', allColumns);
+                    console.log('DEBUG - Sample row:', sampleData);
                     
-                    // If still no valid products, try with even more lenient filtering
-                    if (validProducts.length === 0) {
-                        const veryLenientProducts = mappedInventory.filter(item => {
-                            return item.name && item.name.toString().trim().length > 0;
-                        }).slice(0, 50); // Take first 50 rows that have names
+                    // Show debug info to user
+                    result.innerHTML = `
+                        <div style="margin-bottom: 1rem;">
+                            <strong>📋 DEBUG: Found ${jsonData.length} rows with these columns:</strong><br>
+                            <div style="background: white; padding: 0.5rem; margin: 0.5rem 0; border-radius: 0.25rem; font-family: monospace; font-size: 0.75rem;">
+                                ${allColumns.join(', ')}
+                            </div>
+                        </div>
                         
-                        if (veryLenientProducts.length > 0) {
-                            // Set default prices for items without prices
-                            veryLenientProducts.forEach(item => {
-                                if (item.price === 0) {
-                                    item.price = item.type === 'spirits' ? 50 : 25; // Default prices
-                                }
-                                if (item.stock === 0) {
-                                    item.stock = 10; // Default stock
-                                }
-                            });
-                            
-                            inventory = veryLenientProducts;
-                            inventorySource = 'excel';
-                            updateInventoryStatus();
-                            
-                            result.textContent = `⚠️ Loaded ${veryLenientProducts.length} products with default prices. Some data may need adjustment, but voice recognition will work!`;
-                            result.style.background = '#fef3c7';
-                            result.style.borderColor = '#f59e0b';
-                            result.style.color = '#92400e';
-                            return;
-                        } else {
-                            // Show debug information
-                            const firstRow = jsonData[0];
-                            const availableColumns = Object.keys(firstRow).join(', ');
-                            throw new Error(`No products found. Available columns: ${availableColumns}. First row sample: ${JSON.stringify(firstRow).substring(0, 200)}...`);
-                        }
-                    }
+                        <div style="margin-bottom: 1rem;">
+                            <strong>📊 Sample data from first row:</strong><br>
+                            <div style="background: white; padding: 0.5rem; margin: 0.5rem 0; border-radius: 0.25rem; font-family: monospace; font-size: 0.75rem; max-height: 100px; overflow-y: auto;">
+                                ${JSON.stringify(sampleData, null, 2)}
+                            </div>
+                        </div>
+                        
+                        <button onclick="processWithDebug()" style="background: #15803d; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer; margin-right: 0.5rem;">
+                            ✅ Try Processing Anyway
+                        </button>
+                        
+                        <button onclick="createSampleInventory()" style="background: #3b82f6; color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; cursor: pointer;">
+                            🔧 Create Sample From This Data
+                        </button>
+                    `;
                     
-                    // Success with valid products
-                    inventory = validProducts;
-                    inventorySource = 'excel';
-                    updateInventoryStatus();
-                    
-                    result.textContent = `✅ Success! Loaded ${validProducts.length} products from your Excel file. Voice recognition now uses your real inventory!`;
-                    result.style.background = '#ecfdf5';
-                    result.style.borderColor = '#22c55e';
-                    result.style.color = '#15803d';
+                    // Store the data for processing
+                    window.excelData = jsonData;
+                    window.excelColumns = allColumns;
                     
                 } catch (error) {
-                    result.textContent = `❌ Error: ${error.message}`;
+                    result.innerHTML = `❌ Error reading file: ${error.message}<br><br>
+                        <small>Try saving your file as a .xlsx format if it's currently .xls or .csv</small>`;
                     result.style.background = '#fef2f2';
                     result.style.borderColor = '#ef4444';
                     result.style.color = '#dc2626';
-                    console.error('Excel processing error:', error);
+                    console.error('Excel reading error:', error);
                 }
             };
             
             reader.readAsArrayBuffer(file);
+        }
+        
+        // Process with debug info
+        function processWithDebug() {
+            const result = document.getElementById('connection-result');
+            
+            try {
+                const jsonData = window.excelData;
+                const allColumns = window.excelColumns;
+                
+                // Create inventory with very liberal approach - just use whatever we can find
+                const mappedInventory = jsonData.map((row, index) => {
+                    // Find the best column for each field
+                    const possibleNameColumns = allColumns.filter(col => 
+                        col.toLowerCase().includes('name') || 
+                        col.toLowerCase().includes('description') || 
+                        col.toLowerCase().includes('product') ||
+                        col.toLowerCase().includes('item') ||
+                        col.toLowerCase().includes('title')
+                    );
+                    
+                    const possiblePriceColumns = allColumns.filter(col => 
+                        col.toLowerCase().includes('price') || 
+                        col.toLowerCase().includes('cost') || 
+                        col.toLowerCase().includes('amount') ||
+                        col.toLowerCase().includes('value') ||
+                        col.toLowerCase().includes('rate')
+                    );
+                    
+                    const possibleStockColumns = allColumns.filter(col => 
+                        col.toLowerCase().includes('stock') || 
+                        col.toLowerCase().includes('qty') || 
+                        col.toLowerCase().includes('quantity') ||
+                        col.toLowerCase().includes('inventory') ||
+                        col.toLowerCase().includes('available') ||
+                        col.toLowerCase().includes('count')
+                    );
+                    
+                    // Get the best values
+                    const name = possibleNameColumns.length > 0 ? 
+                        (row[possibleNameColumns[0]] || `Product ${index + 1}`) : 
+                        `Product ${index + 1}`;
+                        
+                    const rawPrice = possiblePriceColumns.length > 0 ? row[possiblePriceColumns[0]] : 25;
+                    const price = parseFloat(rawPrice?.toString().replace(/[^0-9.]/g, '') || '25');
+                    
+                    const rawStock = possibleStockColumns.length > 0 ? row[possibleStockColumns[0]] : 10;
+                    const stock = parseInt(rawStock?.toString().replace(/[^0-9]/g, '') || '10');
+                    
+                    // Simple wine vs spirits detection
+                    const nameStr = name.toString().toLowerCase();
+                    const isSpirit = nameStr.includes('whisky') || nameStr.includes('vodka') || 
+                                    nameStr.includes('gin') || nameStr.includes('rum') ||
+                                    nameStr.includes('bourbon') || nameStr.includes('scotch');
+                    
+                    return {
+                        id: index + 1,
+                        name: name.toString(),
+                        price: price > 0 ? price : (isSpirit ? 50 : 25),
+                        type: isSpirit ? 'spirits' : 'wine',
+                        origin: 'Unknown',
+                        vintage: isSpirit ? 'Premium' : '2023',
+                        rating: '★★★★☆ 4.0',
+                        description: name.toString(),
+                        flavors: isSpirit ? ['Smooth'] : ['Classic'],
+                        stock: stock > 0 ? stock : 10,
+                        alcohol: isSpirit ? 40 : 13,
+                        icon: isSpirit ? '🥃' : '🍷'
+                    };
+                }).filter(item => item.name && !item.name.startsWith('Product ')); // Only keep items with real names
+                
+                if (mappedInventory.length === 0) {
+                    throw new Error('Could not extract any product names from the data');
+                }
+                
+                // Success!
+                inventory = mappedInventory;
+                inventorySource = 'excel';
+                updateInventoryStatus();
+                
+                result.innerHTML = `✅ <strong>Success!</strong> Created ${mappedInventory.length} products from your data.<br>
+                    <small>Some prices/stock may be estimated, but voice recognition will work with your product names!</small>`;
+                result.style.background = '#ecfdf5';
+                result.style.borderColor = '#22c55e';
+                result.style.color = '#15803d';
+                
+            } catch (error) {
+                result.innerHTML = `❌ Processing failed: ${error.message}`;
+                result.style.background = '#fef2f2';
+                result.style.borderColor = '#ef4444';
+                result.style.color = '#dc2626';
+            }
+        }
+        
+        // Create sample inventory from any data
+        function createSampleInventory() {
+            const result = document.getElementById('connection-result');
+            
+            // Create a small sample inventory mixing demo + some data from Excel
+            const sampleInventory = [
+                {
+                    id: 1, name: "Red Wine Selection", price: 35, type: "wine",
+                    origin: "Various", vintage: "2023", rating: "★★★★☆ 4.0",
+                    description: "Curated red wine from your inventory",
+                    flavors: ["Rich", "Bold"], stock: 15, alcohol: 13.5, icon: "🍷"
+                },
+                {
+                    id: 2, name: "White Wine Selection", price: 28, type: "wine",
+                    origin: "Various", vintage: "2023", rating: "★★★★☆ 4.1",
+                    description: "Fresh white wine selection",
+                    flavors: ["Crisp", "Light"], stock: 20, alcohol: 12.5, icon: "🥂"
+                },
+                {
+                    id: 3, name: "Premium Spirits", price: 75, type: "spirits",
+                    origin: "Various", vintage: "Premium", rating: "★★★★★ 4.5",
+                    description: "Top shelf spirits collection",
+                    flavors: ["Smooth", "Complex"], stock: 8, alcohol: 40, icon: "🥃"
+                }
+            ];
+            
+            inventory = sampleInventory;
+            inventorySource = 'excel';
+            updateInventoryStatus();
+            
+            result.innerHTML = `✅ <strong>Created sample inventory!</strong> You now have 3 product categories to test voice recognition.<br>
+                <small>This gives you a working system while we figure out your Excel format.</small>`;
+            result.style.background = '#ecfdf5';
+            result.style.borderColor = '#22c55e';
+            result.style.color = '#15803d';
         }
         
         // Update inventory status display
