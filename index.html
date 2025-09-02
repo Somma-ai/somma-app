@@ -2,465 +2,426 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <meta name="apple-mobile-web-app-title" content="SOMMa">
-    <title>SOMMa - AI Wine & Spirits Sommelier</title>
-    <link rel="apple-touch-icon" href="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTgwIiBoZWlnaHQ9IjE4MCIgdmlld0JveD0iMCAwIDE4MCAxODAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSIxODAiIGhlaWdodD0iMTgwIiByeD0iNDAiIGZpbGw9IiMxNTgwM2QiLz4KPHR0ZXh0IHg9IjkwIiB5PSIxMDAiIGZvbnQtZmFtaWx5PSJzeXN0ZW0tdWkiIGZvbnQtc2l6ZT0iMzYiIGZvbnQtd2VpZ2h0PSJib2xkIiBmaWxsPSJ3aGl0ZSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+U09NTWU8L3RleHQ+Cjwvc3ZnPgo=">
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://unpkg.com/lucide-react@latest/dist/umd/lucide-react.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>SOMMa - Wine Sommelier</title>
     <style>
-        .touch-manipulation { touch-action: manipulation; }
-        input, button, select, textarea { -webkit-appearance: none; border-radius: 8px; }
-        button:active { transform: scale(0.98); }
-        .slider-thumb::-webkit-slider-thumb {
-            appearance: none; height: 20px; width: 20px; border-radius: 50%;
-            background: #15803d; cursor: pointer;
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: white; color: #1f2937; line-height: 1.5;
         }
-        .slider-thumb::-moz-range-thumb {
-            height: 20px; width: 20px; border-radius: 50%;
-            background: #15803d; cursor: pointer; border: none;
+        .app { max-width: 400px; margin: 0 auto; min-height: 100vh; }
+        
+        /* Logo and Header */
+        .splash { text-align: center; padding: 3rem 2rem; }
+        .logo { 
+            background: #15803d; width: 200px; height: 200px; border-radius: 50%;
+            margin: 0 auto 2rem; display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
-        body { margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+        .logo h1 { color: white; font-size: 4rem; font-weight: bold; margin: 0; }
+        
+        /* Sommelier Icon */
+        .sommelier { 
+            width: 120px; height: 120px; margin: 0 auto 3rem;
+            background: #15803d; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; font-size: 3rem;
+        }
+        
+        /* Voice Section */
+        .voice-section { margin-bottom: 3rem; }
+        .voice-prompt { 
+            background: #f8fafc; padding: 2rem; border-radius: 1rem; margin-bottom: 2rem;
+            border: 2px solid #e2e8f0;
+        }
+        .voice-title { 
+            font-size: 1.25rem; font-weight: 600; color: #15803d; 
+            text-align: center; margin-bottom: 1rem;
+        }
+        .voice-subtitle { 
+            font-size: 0.9rem; color: #64748b; text-align: center; margin-bottom: 1rem;
+        }
+        .voice-output { 
+            min-height: 40px; padding: 1rem; background: white; border-radius: 0.5rem;
+            border: 2px solid #15803d; font-style: italic; color: #1f2937;
+            display: none;
+        }
+        .voice-output.show { display: block; }
+        
+        /* AI Response */
+        .ai-response { 
+            background: #ecfdf5; border: 2px solid #22c55e; border-radius: 1rem;
+            padding: 1.5rem; margin-bottom: 2rem; color: #15803d; font-weight: 500;
+            display: none;
+        }
+        .ai-response.show { display: block; }
+        
+        /* Buttons */
+        .btn { 
+            width: 100%; padding: 1rem 2rem; border-radius: 1rem; border: none;
+            font-size: 1.125rem; font-weight: 600; cursor: pointer;
+            transition: all 0.2s ease; margin-bottom: 1rem; display: block;
+            text-decoration: none; text-align: center;
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-voice { 
+            background: #15803d; color: white; font-size: 1.25rem;
+            box-shadow: 0 4px 14px rgba(21, 128, 61, 0.4);
+        }
+        .btn-voice:hover { background: #166534; }
+        .btn-voice:disabled { background: #ef4444; }
+        .btn-secondary { background: #e5e7eb; color: #15803d; }
+        .btn-secondary:hover { background: #d1d5db; }
+        
+        /* Category Screen */
+        .category-screen { display: none; padding: 2rem; }
+        .category-screen.show { display: block; }
+        .header { background: #15803d; padding: 1.5rem; margin: -2rem -2rem 2rem -2rem; }
+        .header h2 { color: white; text-align: center; font-size: 1.5rem; margin: 0; }
+        .category-grid { display: flex; flex-direction: column; gap: 2rem; }
+        .category-card { 
+            background: white; border: 3px solid #15803d; border-radius: 1rem;
+            padding: 3rem 2rem; text-align: center; cursor: pointer;
+            transition: all 0.3s ease; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        .category-card:hover { background: #f0fdf4; transform: translateY(-4px); }
+        .category-icon { font-size: 4rem; margin-bottom: 1rem; }
+        .category-label { color: #15803d; font-size: 2rem; font-weight: bold; }
+        
+        /* Results Screen */
+        .results-screen { display: none; }
+        .results-screen.show { display: block; }
+        .results-header { background: #15803d; padding: 1.5rem; color: white; }
+        .results-header h2 { text-align: center; margin: 0; }
+        .results-content { padding: 2rem; }
+        .result-item { 
+            background: white; border: 2px solid #e5e7eb; border-radius: 1rem;
+            padding: 1.5rem; margin-bottom: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        .result-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; }
+        .result-info { display: flex; align-items: center; }
+        .result-icon { font-size: 2.5rem; margin-right: 1rem; }
+        .result-details h3 { font-size: 1.125rem; margin-bottom: 0.25rem; color: #1f2937; }
+        .result-details p { color: #15803d; font-weight: 500; }
+        .result-price { text-align: right; }
+        .price { font-size: 1.5rem; font-weight: bold; color: #15803d; }
+        .rating { color: #f59e0b; margin-top: 0.25rem; }
+        .description { color: #64748b; margin-bottom: 1rem; }
+        .flavors { display: flex; flex-wrap: gap: 0.5rem; margin-bottom: 1rem; }
+        .flavor { 
+            background: #dcfce7; color: #15803d; padding: 0.25rem 0.75rem;
+            border-radius: 1rem; font-size: 0.875rem;
+        }
+        .result-footer { 
+            display: flex; justify-content: space-between; 
+            font-size: 0.875rem; color: #64748b;
+        }
+        
+        /* Navigation */
+        .nav-btn { 
+            position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%);
+            background: #15803d; color: white; border: none; width: 3rem; height: 3rem;
+            border-radius: 50%; font-size: 1.25rem; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(21, 128, 61, 0.4);
+        }
+        .nav-btn:hover { background: #166534; }
+        
+        /* Utilities */
+        .text-center { text-align: center; }
+        .mb-2 { margin-bottom: 1rem; }
+        .hidden { display: none !important; }
+        
+        /* Loading Animation */
+        .pulse { 
+            animation: pulse 1.5s infinite;
+            display: inline-block; width: 12px; height: 12px;
+            background: white; border-radius: 50%; margin-right: 0.5rem;
+        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
     </style>
 </head>
 <body>
-    <div id="root"></div>
-    
-    <script type="text/babel">
-        const { useState } = React;
-        const { Wine, Database, Settings, Upload, Filter, RotateCcw, Star, DollarSign } = lucideReact;
+    <div class="app">
+        <!-- Splash Screen -->
+        <div id="splash-screen" class="splash">
+            <div class="logo">
+                <h1>SOMMa</h1>
+            </div>
+            
+            <div class="sommelier">🍷</div>
+            
+            <div class="voice-section">
+                <div class="voice-prompt">
+                    <div class="voice-title">Tell me what you're looking for</div>
+                    <div class="voice-subtitle">
+                        Try: "I want a smooth red wine under $50"<br>
+                        or "Show me premium whisky"
+                    </div>
+                    <div id="voice-text" class="voice-output">
+                        Ready to listen...
+                    </div>
+                </div>
 
-        const SOMMa = () => {
-            // Default sample inventory
-            const defaultInventory = [
-                {
-                    id: 1, name: "Château Margaux 2015", price: 450, type: "wine", style: "Red",
-                    category: "Bordeaux", flavorProfile: ["Rich", "Complex", "Earthy", "Tannins"],
-                    origin: "France", vintage: 2015, alcohol: 13.5,
-                    description: "A legendary Bordeaux with exceptional depth and elegance",
-                    stock: 3, rating: 4.9, image: "🍷"
-                },
-                {
-                    id: 2, name: "Kendall-Jackson Chardonnay", price: 18, type: "wine", style: "White",
-                    category: "Chardonnay", flavorProfile: ["Crisp", "Citrus", "Oak", "Vanilla"],
-                    origin: "California", vintage: 2022, alcohol: 13.5,
-                    description: "Balanced Chardonnay with tropical fruit and subtle oak",
-                    stock: 24, rating: 4.2, image: "🥂"
-                },
-                {
-                    id: 3, name: "Macallan 18 Year", price: 650, type: "spirits", style: "Whisky",
-                    category: "Single Malt", flavorProfile: ["Rich", "Smoky", "Oak", "Vanilla"],
-                    origin: "Scotland", vintage: "18 Year", alcohol: 43,
-                    description: "Exceptional single malt with deep complexity",
-                    stock: 8, rating: 4.8, image: "🥃"
-                },
-                {
-                    id: 4, name: "Grey Goose Vodka", price: 45, type: "spirits", style: "Vodka",
-                    category: "Premium", flavorProfile: ["Clean", "Smooth", "Neutral", "Crisp"],
-                    origin: "France", vintage: "N/A", alcohol: 40,
-                    description: "Ultra-premium vodka with exceptional purity",
-                    stock: 32, rating: 4.3, image: "🍸"
-                }
-            ];
+                <div id="ai-response" class="ai-response">
+                    AI response will appear here...
+                </div>
 
-            const [currentScreen, setCurrentScreen] = useState('splash');
-            const [selectedType, setSelectedType] = useState('');
-            const [filters, setFilters] = useState({
-                maxPrice: 200, style: '', category: '', flavorProfile: '', origin: ''
+                <button id="voice-btn" class="btn btn-voice" onclick="startVoice()">
+                    🎤 Tap to Speak
+                </button>
+            </div>
+
+            <div class="text-center">
+                <div style="color: #64748b; margin-bottom: 1rem;">or</div>
+                <button class="btn btn-secondary" onclick="showCategories()">
+                    Browse Manually
+                </button>
+            </div>
+        </div>
+
+        <!-- Category Selection -->
+        <div id="category-screen" class="category-screen">
+            <div class="header">
+                <h2>What are you looking for?</h2>
+            </div>
+            
+            <div class="category-grid">
+                <div class="category-card" onclick="selectType('wine')">
+                    <div class="category-icon">🍷</div>
+                    <div class="category-label">Wine</div>
+                </div>
+
+                <div class="category-card" onclick="selectType('spirits')">
+                    <div class="category-icon">🥃</div>
+                    <div class="category-label">Spirits</div>
+                </div>
+            </div>
+
+            <button class="nav-btn" onclick="showSplash()">←</button>
+        </div>
+
+        <!-- Results Screen -->
+        <div id="results-screen" class="results-screen">
+            <div class="results-header">
+                <h2>Recommendations</h2>
+            </div>
+            
+            <div class="results-content">
+                <div id="results-list">
+                    <!-- Results will be populated here -->
+                </div>
+            </div>
+
+            <button class="nav-btn" onclick="showSplash()">🏠</button>
+        </div>
+    </div>
+
+    <script>
+        // Sample inventory data
+        const inventory = [
+            {
+                id: 1, name: "Château Margaux 2015", price: 450, type: "wine",
+                origin: "France", vintage: "2015", rating: "★★★★★ 4.9",
+                description: "A legendary Bordeaux with exceptional depth and elegance",
+                flavors: ["Rich", "Complex", "Earthy"], stock: 3, alcohol: 13.5, icon: "🍷"
+            },
+            {
+                id: 2, name: "Kendall-Jackson Chardonnay", price: 18, type: "wine",
+                origin: "California", vintage: "2022", rating: "★★★★☆ 4.2",
+                description: "Balanced Chardonnay with tropical fruit and subtle oak",
+                flavors: ["Crisp", "Citrus", "Oak"], stock: 24, alcohol: 13.5, icon: "🥂"
+            },
+            {
+                id: 3, name: "Macallan 18 Year", price: 650, type: "spirits",
+                origin: "Scotland", vintage: "18 Year", rating: "★★★★★ 4.8",
+                description: "Exceptional single malt with deep complexity",
+                flavors: ["Rich", "Smoky", "Oak"], stock: 8, alcohol: 43, icon: "🥃"
+            },
+            {
+                id: 4, name: "Grey Goose Vodka", price: 45, type: "spirits",
+                origin: "France", vintage: "Premium", rating: "★★★★☆ 4.3",
+                description: "Ultra-premium vodka with exceptional purity",
+                flavors: ["Clean", "Smooth", "Crisp"], stock: 32, alcohol: 40, icon: "🍸"
+            }
+        ];
+
+        let isListening = false;
+
+        // Screen Management
+        function showScreen(screenId) {
+            document.querySelectorAll('.app > div').forEach(screen => {
+                screen.classList.remove('show');
             });
-            const [recommendations, setRecommendations] = useState([]);
-            const [isListening, setIsListening] = useState(false);
-            const [voiceText, setVoiceText] = useState('');
-            const [aiResponse, setAiResponse] = useState('');
-            const [inventory, setInventory] = useState(defaultInventory);
-            const [inventorySource, setInventorySource] = useState('demo');
-            const [apiConfig, setApiConfig] = useState({
-                url: '', apiKey: '', clientId: '', clientSecret: '', storeId: '',
-                connected: false, platform: 'lightspeed'
-            });
-
-            // Voice Recognition Functions
-            const startListening = () => {
-                if ('webkitSpeechRecognition' in window) {
-                    const recognition = new window.webkitSpeechRecognition();
-                    recognition.continuous = false;
-                    recognition.interimResults = false;
-                    recognition.lang = 'en-US';
-
-                    recognition.onstart = () => {
-                        setIsListening(true);
-                        setVoiceText('Listening...');
-                    };
-
-                    recognition.onresult = (event) => {
-                        const transcript = event.results[0][0].transcript;
-                        setVoiceText(transcript);
-                        processVoiceInput(transcript);
-                        setIsListening(false);
-                    };
-
-                    recognition.onerror = () => {
-                        setIsListening(false);
-                        setVoiceText('Sorry, I couldn\'t hear you clearly. Please try again.');
-                    };
-
-                    recognition.start();
+            const targetScreen = document.getElementById(screenId);
+            if (targetScreen) {
+                if (screenId === 'splash-screen') {
+                    targetScreen.style.display = 'block';
                 } else {
-                    setVoiceText('Voice recognition not supported in this browser.');
+                    targetScreen.classList.add('show');
                 }
-            };
+            }
+        }
 
-            const processVoiceInput = (text) => {
-                const lowerText = text.toLowerCase();
-                let type = '', style = '', budget = 200, flavor = '';
+        function showSplash() { showScreen('splash-screen'); }
+        function showCategories() { showScreen('category-screen'); }
+        function showResults() { showScreen('results-screen'); }
 
-                if (lowerText.includes('wine')) type = 'wine';
-                else if (lowerText.includes('spirits') || lowerText.includes('whisky') || lowerText.includes('vodka')) type = 'spirits';
+        // Voice Recognition
+        function startVoice() {
+            if (isListening) return;
+            
+            const voiceBtn = document.getElementById('voice-btn');
+            const voiceText = document.getElementById('voice-text');
+            const aiResponse = document.getElementById('ai-response');
 
-                if (lowerText.includes('red')) style = 'Red';
-                else if (lowerText.includes('white')) style = 'White';
-                else if (lowerText.includes('whisky')) style = 'Whisky';
-                else if (lowerText.includes('vodka')) style = 'Vodka';
+            if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                voiceText.textContent = 'Voice recognition not supported. Try "Browse Manually" instead.';
+                voiceText.classList.add('show');
+                return;
+            }
 
-                const budgetMatch = lowerText.match(/(\d+)\s*(dollar|buck|\$)/);
-                if (budgetMatch) budget = parseInt(budgetMatch[1]);
-                else if (lowerText.includes('cheap')) budget = 50;
-                else if (lowerText.includes('expensive')) budget = 500;
+            try {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                const recognition = new SpeechRecognition();
+                
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                recognition.lang = 'en-US';
 
-                if (lowerText.includes('smooth')) flavor = 'Smooth';
-                else if (lowerText.includes('bold')) flavor = 'Bold';
-                else if (lowerText.includes('crisp')) flavor = 'Crisp';
+                recognition.onstart = function() {
+                    isListening = true;
+                    voiceBtn.innerHTML = '<span class="pulse"></span>Listening...';
+                    voiceBtn.disabled = true;
+                    voiceText.textContent = 'Listening for your request...';
+                    voiceText.classList.add('show');
+                };
 
-                if (type) {
-                    setSelectedType(type);
-                    setFilters({ maxPrice: budget, style, category: '', flavorProfile: flavor, origin: '' });
-                    
-                    let response = `Perfect! Looking for ${type}`;
-                    if (style) response += ` - ${style.toLowerCase()}`;
-                    if (budget !== 200) response += ` under $${budget}`;
-                    if (flavor) response += ` with ${flavor.toLowerCase()} characteristics`;
-                    response += `. Finding options...`;
-                    
-                    setAiResponse(response);
-                    
-                    setTimeout(() => {
-                        generateRecommendationsFromVoice(type, budget, style, flavor);
-                        setCurrentScreen('results');
-                    }, 2500);
-                } else {
-                    setAiResponse(`I heard: "${text}". Could you be more specific about wine or spirits?`);
-                }
-            };
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    voiceText.textContent = `You said: "${transcript}"`;
+                    processVoice(transcript);
+                };
 
-            const generateRecommendationsFromVoice = (type, budget, style, flavor) => {
-                let filtered = inventory.filter(item => 
-                    item.type === type && item.price <= budget && item.stock > 0
-                );
+                recognition.onerror = function() {
+                    resetVoiceButton();
+                    voiceText.textContent = 'Could not hear you clearly. Please try again or use "Browse Manually".';
+                };
 
-                if (style) filtered = filtered.filter(item => item.style === style);
-                if (flavor) filtered = filtered.filter(item => item.flavorProfile.includes(flavor));
+                recognition.onend = function() {
+                    resetVoiceButton();
+                };
 
-                filtered.sort((a, b) => b.rating - a.rating);
-                setRecommendations(filtered.slice(0, 10));
-            };
+                recognition.start();
+            } catch (error) {
+                resetVoiceButton();
+                voiceText.textContent = 'Voice feature unavailable. Please use "Browse Manually".';
+                voiceText.classList.add('show');
+            }
+        }
 
-            // Screen Components
-            const SplashScreen = () => (
-                <div className="min-h-screen bg-white flex flex-col items-center justify-center p-8">
-                    <div className="bg-green-700 w-48 h-48 rounded-full flex items-center justify-center mb-8 shadow-lg">
-                        <h1 className="text-white text-6xl font-bold">SOMMa</h1>
-                    </div>
-                    
-                    <div className="text-center mb-8">
-                        <svg className="w-32 h-32 mx-auto mb-4 text-green-700" viewBox="0 0 200 300" fill="currentColor">
-                            <path d="M100 50 C80 45 70 60 70 80 L70 120 C70 140 80 150 90 160 L90 280 L110 280 L110 160 C120 150 130 140 130 120 L130 80 C130 60 120 45 100 50 Z"/>
-                            <circle cx="100" cy="70" r="15"/>
-                            <path d="M85 90 Q90 85 95 90 L95 100 Q90 105 85 100 Z"/>
-                            <path d="M105 90 Q110 85 115 90 L115 100 Q110 105 105 100 Z"/>
-                            <path d="M90 110 Q100 120 110 110"/>
-                            <path d="M60 140 Q70 130 85 140 L85 150 Q70 160 60 150 Z"/>
-                            <path d="M115 140 Q130 130 140 140 L140 150 Q130 160 115 150 Z"/>
-                        </svg>
-                    </div>
+        function resetVoiceButton() {
+            isListening = false;
+            const voiceBtn = document.getElementById('voice-btn');
+            voiceBtn.innerHTML = '🎤 Tap to Speak';
+            voiceBtn.disabled = false;
+        }
 
-                    <div className="w-full max-w-md mb-8">
-                        <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 mb-4 flex items-center justify-between">
-                            <div className="flex items-center">
-                                <Database className="w-4 h-4 text-blue-600 mr-2" />
-                                <span className="text-sm text-blue-700">
-                                    {inventorySource === 'demo' ? `Demo Inventory (${inventory.length} items)` :
-                                     inventorySource === 'excel' ? `Excel File (${inventory.length} items)` :
-                                     `Connected API (${inventory.length} items)`}
-                                </span>
-                            </div>
-                            <button 
-                                onClick={() => setCurrentScreen('inventory')}
-                                className="text-blue-600 hover:text-blue-800"
-                            >
-                                <Settings className="w-4 h-4" />
-                            </button>
-                        </div>
+        // Process Voice Input
+        function processVoice(text) {
+            const lower = text.toLowerCase();
+            const aiResponse = document.getElementById('ai-response');
+            
+            let type = '';
+            let budget = 1000;
+            
+            // Detect type
+            if (lower.includes('wine') || lower.includes('red') || lower.includes('white') || lower.includes('chardonnay')) {
+                type = 'wine';
+            } else if (lower.includes('spirits') || lower.includes('whisky') || lower.includes('vodka') || lower.includes('whiskey')) {
+                type = 'spirits';
+            }
+            
+            // Detect budget
+            const budgetMatch = lower.match(/(\d+)/);
+            if (budgetMatch) budget = parseInt(budgetMatch[1]);
+            else if (lower.includes('cheap') || lower.includes('budget')) budget = 50;
+            else if (lower.includes('expensive') || lower.includes('premium')) budget = 500;
 
-                        <div className="bg-gray-50 rounded-xl p-6 mb-6 min-h-[120px]">
-                            <div className="text-center">
-                                <div className="text-lg font-semibold text-green-700 mb-2">
-                                    Tell me what you're looking for
-                                </div>
-                                <div className="text-sm text-gray-600 mb-4">
-                                    Try: "I want a smooth red wine under $50" or "Show me premium whisky"
-                                </div>
-                                {voiceText && (
-                                    <div className="text-sm text-gray-800 italic border-l-4 border-green-700 pl-3 text-left">
-                                        "{voiceText}"
-                                    </div>
-                                )}
-                            </div>
-                        </div>
+            if (type) {
+                let response = `Perfect! Looking for ${type}`;
+                if (budget < 1000) response += ` under $${budget}`;
+                response += '. Here are my recommendations...';
+                
+                aiResponse.textContent = response;
+                aiResponse.classList.add('show');
+                
+                setTimeout(() => {
+                    showRecommendations(type, budget);
+                    showResults();
+                }, 2000);
+            } else {
+                aiResponse.textContent = `I heard: "${text}". Please be more specific about wine or spirits.`;
+                aiResponse.classList.add('show');
+            }
+        }
 
-                        {aiResponse && (
-                            <div className="bg-green-50 border border-green-200 rounded-xl p-4 mb-6">
-                                <div className="text-green-700 font-medium">{aiResponse}</div>
-                            </div>
-                        )}
+        // Category Selection
+        function selectType(type) {
+            showRecommendations(type, 1000);
+            showResults();
+        }
 
-                        <button 
-                            onClick={startListening}
-                            disabled={isListening}
-                            className={`w-full py-4 rounded-xl font-semibold text-xl transition-all shadow-lg mb-4 ${
-                                isListening 
-                                    ? 'bg-red-500 text-white' 
-                                    : 'bg-green-700 text-white hover:bg-green-800'
-                            }`}
-                        >
-                            {isListening ? (
-                                <div className="flex items-center justify-center">
-                                    <div className="w-4 h-4 bg-white rounded-full mr-3 animate-pulse"></div>
-                                    Listening...
-                                </div>
-                            ) : (
-                                '🎤 Tap to Speak'
-                            )}
-                        </button>
-                    </div>
-
-                    <div className="text-center">
-                        <div className="text-gray-500 text-sm mb-4">or</div>
-                        <button 
-                            onClick={() => setCurrentScreen('category')}
-                            className="bg-gray-200 text-green-700 px-8 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
-                        >
-                            Browse Manually
-                        </button>
-                    </div>
-                </div>
+        // Show Recommendations
+        function showRecommendations(type, budget) {
+            let filtered = inventory.filter(item => 
+                item.type === type && item.price <= budget && item.stock > 0
             );
-
-            const CategorySelection = () => (
-                <div className="min-h-screen bg-white">
-                    <div className="bg-green-700 p-6">
-                        <h2 className="text-white text-2xl font-bold text-center">What are you looking for?</h2>
+            
+            const resultsList = document.getElementById('results-list');
+            
+            if (filtered.length === 0) {
+                resultsList.innerHTML = `
+                    <div class="text-center" style="padding: 3rem;">
+                        <div style="font-size: 4rem; margin-bottom: 1rem;">🤷‍♂️</div>
+                        <p>No matches found. Try adjusting your preferences.</p>
                     </div>
-                    
-                    <div className="p-8 flex flex-col items-center space-y-8">
-                        <button 
-                            onClick={() => {
-                                setSelectedType('wine');
-                                setCurrentScreen('preferences');
-                            }}
-                            className="w-full max-w-md bg-white border-2 border-green-700 rounded-xl p-8 hover:bg-green-50 transition-colors shadow-md"
-                        >
-                            <div className="text-6xl mb-4">🍷</div>
-                            <div className="text-green-700 text-2xl font-bold">wine</div>
-                        </button>
+                `;
+                return;
+            }
 
-                        <button 
-                            onClick={() => {
-                                setSelectedType('spirits');
-                                setCurrentScreen('preferences');
-                            }}
-                            className="w-full max-w-md bg-white border-2 border-green-700 rounded-xl p-8 hover:bg-green-50 transition-colors shadow-md"
-                        >
-                            <div className="text-6xl mb-4">🥃</div>
-                            <div className="text-green-700 text-2xl font-bold">spirits</div>
-                        </button>
-                    </div>
-
-                    <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2">
-                        <button 
-                            onClick={() => setCurrentScreen('splash')}
-                            className="w-12 h-12 bg-green-700 rounded-full flex items-center justify-center text-white hover:bg-green-800 transition-colors shadow-lg"
-                        >
-                            ←
-                        </button>
-                    </div>
-                </div>
-            );
-
-            const InventoryScreen = () => (
-                <div className="min-h-screen bg-white">
-                    <div className="bg-green-700 p-6 flex items-center justify-between">
-                        <button 
-                            onClick={() => setCurrentScreen('splash')}
-                            className="text-white text-xl"
-                        >
-                            ←
-                        </button>
-                        <h2 className="text-white text-2xl font-bold">Inventory Setup</h2>
-                        <div className="w-6"></div>
-                    </div>
-
-                    <div className="p-6 space-y-6">
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                            <h3 className="font-semibold text-gray-900 mb-2">Current Inventory</h3>
-                            <div className="flex items-center justify-between">
-                                <span className="text-gray-600">
-                                    {inventorySource === 'demo' ? 'Demo Data' : 
-                                     inventorySource === 'excel' ? 'Excel File' : 'API Connected'}
-                                </span>
-                                <span className="text-green-700 font-semibold">{inventory.length} items</span>
+            resultsList.innerHTML = filtered.map(item => `
+                <div class="result-item">
+                    <div class="result-header">
+                        <div class="result-info">
+                            <div class="result-icon">${item.icon}</div>
+                            <div class="result-details">
+                                <h3>${item.name}</h3>
+                                <p>${item.origin} • ${item.vintage}</p>
                             </div>
                         </div>
-
-                        <div className="bg-white border-2 border-blue-200 rounded-xl p-6">
-                            <div className="flex items-center mb-4">
-                                <Database className="w-6 h-6 text-blue-600 mr-3" />
-                                <h3 className="text-lg font-semibold">Connect with Personal Token</h3>
-                                <div className="ml-2 bg-green-100 text-green-800 text-xs px-2 py-1 rounded">EASY</div>
-                            </div>
-                            <p className="text-gray-600 mb-4 text-sm">
-                                Connect to your Lightspeed X inventory with just your store URL and Personal Token.
-                            </p>
-                            
-                            <div className="space-y-3">
-                                <div>
-                                    <label className="text-sm font-medium text-gray-700">Your Lightspeed Store URL</label>
-                                    <input
-                                        type="url"
-                                        placeholder="https://yourstore.vendhq.com"
-                                        value={apiConfig.url}
-                                        onChange={(e) => setApiConfig({...apiConfig, url: e.target.value})}
-                                        className="w-full p-3 border border-gray-300 rounded-lg mt-1"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="text-sm font-medium text-gray-700">Personal Token</label>
-                                    <input
-                                        type="password"
-                                        placeholder="Your Lightspeed Personal Token"
-                                        value={apiConfig.apiKey}
-                                        onChange={(e) => setApiConfig({...apiConfig, apiKey: e.target.value})}
-                                        className="w-full p-3 border border-gray-300 rounded-lg mt-1"
-                                    />
-                                </div>
-                                
-                                <div className="bg-blue-50 p-3 rounded-lg text-xs text-blue-700">
-                                    <strong>🔧 How to get your Personal Token:</strong><br/>
-                                    1. Log into your Lightspeed X dashboard<br/>
-                                    2. Go to <strong>Setup → Personal Tokens</strong><br/>
-                                    3. Click "<strong>Add Personal Token</strong>"<br/>
-                                    4. Set name to "SOMMa" and <strong>UNCHECK</strong> "Allow personal tokens to expire"<br/>
-                                    5. Click "<strong>Generate Personal Token</strong>" and copy it here
-                                </div>
-                                
-                                <button
-                                    onClick={() => setAiResponse('API connection coming soon! Use Excel upload for now.')}
-                                    disabled={!apiConfig.url || !apiConfig.apiKey}
-                                    className="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700 disabled:bg-gray-400 transition-colors"
-                                >
-                                    🔗 Connect to Lightspeed X
-                                </button>
-                            </div>
+                        <div class="result-price">
+                            <div class="price">$${item.price}</div>
+                            <div class="rating">${item.rating}</div>
                         </div>
-
-                        {aiResponse && (
-                            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
-                                <div className="text-blue-700">{aiResponse}</div>
-                            </div>
-                        )}
+                    </div>
+                    <div class="description">${item.description}</div>
+                    <div class="flavors">
+                        ${item.flavors.map(flavor => `<span class="flavor">${flavor}</span>`).join('')}
+                    </div>
+                    <div class="result-footer">
+                        <span>Stock: ${item.stock} available</span>
+                        <span>${item.alcohol}% ABV</span>
                     </div>
                 </div>
-            );
+            `).join('');
+        }
 
-            const ResultsScreen = () => (
-                <div className="min-h-screen bg-white">
-                    <div className="bg-green-700 p-6 flex items-center justify-between">
-                        <button onClick={() => setCurrentScreen('splash')} className="text-white text-xl">←</button>
-                        <h2 className="text-white text-2xl font-bold">Recommendations</h2>
-                        <button onClick={() => setCurrentScreen('category')} className="text-white">
-                            <RotateCcw className="w-6 h-6" />
-                        </button>
-                    </div>
-
-                    <div className="p-6">
-                        {recommendations.length === 0 ? (
-                            <div className="text-center py-12">
-                                <div className="text-4xl mb-4">🤷‍♂️</div>
-                                <p className="text-gray-600">No matches found. Try adjusting your preferences.</p>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {recommendations.map((item) => (
-                                    <div key={item.id} className="bg-white border-2 border-gray-200 rounded-xl p-6 shadow-sm">
-                                        <div className="flex items-start justify-between mb-4">
-                                            <div className="flex items-center">
-                                                <span className="text-4xl mr-4">{item.image}</span>
-                                                <div>
-                                                    <h3 className="font-bold text-lg text-gray-900">{item.name}</h3>
-                                                    <p className="text-green-700 font-medium">{item.origin} • {item.vintage}</p>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <div className="text-2xl font-bold text-green-700">${item.price}</div>
-                                                <div className="flex items-center justify-end">
-                                                    <Star className="w-4 h-4 text-yellow-500 fill-current mr-1" />
-                                                    <span className="text-sm text-gray-600">{item.rating}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <p className="text-gray-600 mb-4">{item.description}</p>
-                                        <div className="flex flex-wrap gap-2 mb-4">
-                                            {item.flavorProfile.map(flavor => (
-                                                <span key={flavor} className="px-3 py-1 bg-green-100 text-green-700 text-sm rounded-full">
-                                                    {flavor}
-                                                </span>
-                                            ))}
-                                        </div>
-                                        <div className="flex justify-between items-center text-sm text-gray-600">
-                                            <span>Stock: {item.stock} available</span>
-                                            <span>{item.alcohol}% ABV</span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            );
-
-            const renderScreen = () => {
-                switch(currentScreen) {
-                    case 'splash': return <SplashScreen />;
-                    case 'inventory': return <InventoryScreen />;
-                    case 'category': return <CategorySelection />;
-                    case 'results': return <ResultsScreen />;
-                    default: return <SplashScreen />;
-                }
-            };
-
-            return (
-                <div className="max-w-md mx-auto bg-white min-h-screen touch-manipulation">
-                    {renderScreen()}
-                </div>
-            );
-        };
-
-        ReactDOM.render(<SOMMa />, document.getElementById('root'));
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            showSplash();
+        });
     </script>
 </body>
 </html>
