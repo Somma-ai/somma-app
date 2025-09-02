@@ -398,68 +398,155 @@
                         throw new Error('Excel file appears to be empty');
                     }
                     
-                    // Map Excel data to SOMMa format
+                    // Debug: Show first row to understand column structure
+                    console.log('First row columns:', Object.keys(jsonData[0]));
+                    
+                    // Map Excel data to SOMMa format with very flexible column matching
                     const mappedInventory = jsonData.map((row, index) => {
-                        // Flexible column mapping
-                        const name = row.Name || row.Product || row.Item || row['Product Name'] || `Product ${index + 1}`;
-                        const price = parseFloat(row.Price || row.Cost || row['Retail Price'] || row['Sale Price'] || 0);
-                        const category = (row.Category || row.Type || row.Classification || '').toString().toLowerCase();
-                        const stock = parseInt(row.Stock || row.Quantity || row.Inventory || row.QOH || 0);
-                        const description = row.Description || row.Notes || row.Details || '';
+                        // Get all column names for this row
+                        const columns = Object.keys(row);
                         
-                        // Determine if it's wine or spirits
-                        const isSpirit = category.includes('spirit') || 
-                                        category.includes('whisky') || category.includes('whiskey') ||
-                                        category.includes('vodka') || category.includes('gin') ||
-                                        category.includes('rum') || category.includes('cognac') ||
-                                        category.includes('tequila') || category.includes('liquor') ||
-                                        name.toLowerCase().includes('whisky') || 
-                                        name.toLowerCase().includes('vodka');
+                        // Helper function to find column value by multiple possible names
+                        function findColumnValue(possibleNames, defaultValue = '') {
+                            for (let name of possibleNames) {
+                                // Check exact match first
+                                if (row[name] !== undefined && row[name] !== null && row[name] !== '') {
+                                    return row[name];
+                                }
+                                // Check case-insensitive partial match
+                                for (let col of columns) {
+                                    if (col.toLowerCase().includes(name.toLowerCase())) {
+                                        if (row[col] !== undefined && row[col] !== null && row[col] !== '') {
+                                            return row[col];
+                                        }
+                                    }
+                                }
+                            }
+                            return defaultValue;
+                        }
                         
-                        // Extract flavors from description
-                        const flavorKeywords = ['smooth', 'bold', 'crisp', 'sweet', 'dry', 'rich', 'complex', 'fruity', 'earthy', 'spicy', 'vanilla', 'oak', 'citrus'];
+                        // Very flexible column matching
+                        const name = findColumnValue([
+                            'Name', 'Product', 'Item', 'Product Name', 'Item Name', 'Title', 
+                            'Description', 'Product Description', 'Item Description'
+                        ], `Product ${index + 1}`);
+                        
+                        const priceValue = findColumnValue([
+                            'Price', 'Cost', 'Retail Price', 'Sale Price', 'Unit Price', 
+                            'Selling Price', 'Amount', 'Value', 'Rate'
+                        ], '0');
+                        
+                        const stockValue = findColumnValue([
+                            'Stock', 'Quantity', 'Inventory', 'QOH', 'Qty', 'Available', 
+                            'On Hand', 'Count', 'Units', 'Qty Available'
+                        ], '1'); // Default to 1 if no stock column found
+                        
+                        const category = findColumnValue([
+                            'Category', 'Type', 'Classification', 'Class', 'Product Type',
+                            'Item Type', 'Brand', 'Style', 'Variant'
+                        ], '').toString().toLowerCase();
+                        
+                        const description = findColumnValue([
+                            'Description', 'Notes', 'Details', 'Product Description', 
+                            'Item Description', 'Long Description', 'Summary'
+                        ], name.toString());
+                        
+                        // Clean and parse values
+                        const price = parseFloat(priceValue.toString().replace(/[^0-9.]/g, '')) || 0;
+                        const stock = parseInt(stockValue.toString().replace(/[^0-9]/g, '')) || 1;
+                        
+                        // Determine if it's wine or spirits - much broader detection
+                        const nameAndCategory = (name + ' ' + category + ' ' + description).toLowerCase();
+                        const isSpirit = nameAndCategory.includes('spirit') || 
+                                        nameAndCategory.includes('whisky') || nameAndCategory.includes('whiskey') ||
+                                        nameAndCategory.includes('vodka') || nameAndCategory.includes('gin') ||
+                                        nameAndCategory.includes('rum') || nameAndCategory.includes('cognac') ||
+                                        nameAndCategory.includes('tequila') || nameAndCategory.includes('liquor') ||
+                                        nameAndCategory.includes('bourbon') || nameAndCategory.includes('scotch') ||
+                                        category.includes('alcohol') || category.includes('liqueur');
+                        
+                        // Extract flavors from description and name
+                        const flavorKeywords = ['smooth', 'bold', 'crisp', 'sweet', 'dry', 'rich', 'complex', 'fruity', 'earthy', 'spicy', 'vanilla', 'oak', 'citrus', 'mineral', 'tannins'];
+                        const textToSearch = (description + ' ' + name + ' ' + category).toLowerCase();
                         const detectedFlavors = flavorKeywords.filter(keyword => 
-                            (description + ' ' + name).toLowerCase().includes(keyword)
+                            textToSearch.includes(keyword)
                         ).map(flavor => flavor.charAt(0).toUpperCase() + flavor.slice(1));
                         
                         return {
                             id: index + 1,
-                            name: name,
+                            name: name.toString(),
                             price: price,
                             type: isSpirit ? 'spirits' : 'wine',
-                            origin: row.Origin || row.Region || row.Country || 'Unknown',
-                            vintage: row.Vintage || row.Year || (isSpirit ? 'Premium' : '2023'),
+                            origin: findColumnValue(['Origin', 'Region', 'Country', 'Source', 'Location'], 'Unknown'),
+                            vintage: findColumnValue(['Vintage', 'Year', 'Age'], isSpirit ? 'Premium' : '2023'),
                             rating: '★★★★☆ 4.0',
-                            description: description || name,
+                            description: description.toString(),
                             flavors: detectedFlavors.length > 0 ? detectedFlavors : (isSpirit ? ['Smooth'] : ['Classic']),
                             stock: stock,
-                            alcohol: parseFloat(row.ABV || row.Alcohol || row['Alcohol %'] || (isSpirit ? 40 : 13)),
-                            icon: isSpirit ? '🥃' : '🍷'
+                            alcohol: parseFloat(findColumnValue(['ABV', 'Alcohol', 'Alcohol %', 'Alcohol Content'], isSpirit ? '40' : '13')),
+                            icon: isSpirit ? '🥃' : '🍷',
+                            originalRow: row // Keep for debugging
                         };
-                    }).filter(item => item.stock > 0 && item.price > 0); // Only include items with stock and price
+                    });
                     
-                    if (mappedInventory.length === 0) {
-                        throw new Error('No valid products found with stock and prices');
+                    // Filter products - be more lenient with requirements
+                    const validProducts = mappedInventory.filter(item => {
+                        const hasName = item.name && item.name.toString().trim().length > 0 && !item.name.toString().startsWith('Product ');
+                        const hasPrice = item.price > 0;
+                        const hasStock = item.stock > 0;
+                        return hasName && (hasPrice || hasStock); // Accept if has name and either price OR stock
+                    });
+                    
+                    // If still no valid products, try with even more lenient filtering
+                    if (validProducts.length === 0) {
+                        const veryLenientProducts = mappedInventory.filter(item => {
+                            return item.name && item.name.toString().trim().length > 0;
+                        }).slice(0, 50); // Take first 50 rows that have names
+                        
+                        if (veryLenientProducts.length > 0) {
+                            // Set default prices for items without prices
+                            veryLenientProducts.forEach(item => {
+                                if (item.price === 0) {
+                                    item.price = item.type === 'spirits' ? 50 : 25; // Default prices
+                                }
+                                if (item.stock === 0) {
+                                    item.stock = 10; // Default stock
+                                }
+                            });
+                            
+                            inventory = veryLenientProducts;
+                            inventorySource = 'excel';
+                            updateInventoryStatus();
+                            
+                            result.textContent = `⚠️ Loaded ${veryLenientProducts.length} products with default prices. Some data may need adjustment, but voice recognition will work!`;
+                            result.style.background = '#fef3c7';
+                            result.style.borderColor = '#f59e0b';
+                            result.style.color = '#92400e';
+                            return;
+                        } else {
+                            // Show debug information
+                            const firstRow = jsonData[0];
+                            const availableColumns = Object.keys(firstRow).join(', ');
+                            throw new Error(`No products found. Available columns: ${availableColumns}. First row sample: ${JSON.stringify(firstRow).substring(0, 200)}...`);
+                        }
                     }
                     
-                    // Update inventory
-                    inventory = mappedInventory;
+                    // Success with valid products
+                    inventory = validProducts;
                     inventorySource = 'excel';
-                    
-                    // Update status display
                     updateInventoryStatus();
                     
-                    // Show success message
-                    result.textContent = `✅ Success! Loaded ${mappedInventory.length} products from your Excel file. Voice recognition now uses your real inventory!`;
+                    result.textContent = `✅ Success! Loaded ${validProducts.length} products from your Excel file. Voice recognition now uses your real inventory!`;
                     result.style.background = '#ecfdf5';
                     result.style.borderColor = '#22c55e';
                     result.style.color = '#15803d';
                     
                 } catch (error) {
-                    result.textContent = `❌ Error reading Excel file: ${error.message}. Please check the file format and try again.`;
+                    result.textContent = `❌ Error: ${error.message}`;
                     result.style.background = '#fef2f2';
                     result.style.borderColor = '#ef4444';
                     result.style.color = '#dc2626';
+                    console.error('Excel processing error:', error);
                 }
             };
             
