@@ -153,6 +153,17 @@
             <div class="sommelier">🍷</div>
             
             <div class="voice-section">
+                <!-- Inventory Status Bar with Settings -->
+                <div style="background: #dbeafe; border: 2px solid #3b82f6; border-radius: 0.75rem; padding: 0.75rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between;">
+                    <div style="display: flex; align-items: center;">
+                        <span style="margin-right: 0.5rem;">📊</span>
+                        <span style="font-size: 0.875rem; color: #1d4ed8;">Demo Inventory (4 items)</span>
+                    </div>
+                    <button onclick="showScreen('inventory-screen')" style="background: none; border: none; color: #1d4ed8; cursor: pointer; padding: 0.5rem; border-radius: 0.5rem; font-size: 1.2rem;">
+                        ⚙️
+                    </button>
+                </div>
+
                 <div class="voice-prompt">
                     <div class="voice-title">Tell me what you're looking for</div>
                     <div class="voice-subtitle">
@@ -202,7 +213,64 @@
             <button class="nav-btn" onclick="showSplash()">←</button>
         </div>
 
-        <!-- Results Screen -->
+        <!-- Inventory Setup Screen -->
+        <div id="inventory-screen" class="category-screen">
+            <div class="header">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <button class="back-btn" onclick="showSplash()" style="background: none; border: none; color: white; font-size: 1.2rem; cursor: pointer;">←</button>
+                    <h2 style="margin: 0;">Inventory Setup</h2>
+                    <div style="width: 2rem;"></div>
+                </div>
+            </div>
+            
+            <div style="padding: 2rem;">
+                <div style="background: #f9fafb; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1.5rem;">
+                    <h3 style="font-weight: 600; color: #1f2937; margin-bottom: 0.5rem;">Current Inventory</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <span style="color: #6b7280;">Demo Data</span>
+                        <span style="color: #15803d; font-weight: 600;">4 items</span>
+                    </div>
+                </div>
+
+                <div style="background: white; border: 2px solid #3b82f6; border-radius: 1rem; padding: 1.5rem; margin-bottom: 1.5rem;">
+                    <div style="display: flex; align-items: center; margin-bottom: 1rem;">
+                        <span style="color: #3b82f6; margin-right: 0.75rem; font-size: 1.5rem;">📊</span>
+                        <h3 style="font-size: 1.125rem; font-weight: 600;">Connect with Personal Token</h3>
+                        <span style="background: #dcfce7; color: #15803d; padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; margin-left: 0.5rem;">EASY</span>
+                    </div>
+                    <p style="color: #6b7280; margin-bottom: 1rem; font-size: 0.875rem;">
+                        Connect to your Lightspeed X inventory with just your store URL and Personal Token.
+                    </p>
+                    
+                    <div style="margin-bottom: 0.75rem;">
+                        <label style="display: block; font-weight: 500; color: #374151; font-size: 0.875rem; margin-bottom: 0.25rem;">Your Lightspeed Store URL</label>
+                        <input type="url" placeholder="https://yourstore.vendhq.com" id="store-url" style="width: 100%; padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 0.5rem; font-size: 1rem;">
+                    </div>
+                    
+                    <div style="margin-bottom: 0.75rem;">
+                        <label style="display: block; font-weight: 500; color: #374151; font-size: 0.875rem; margin-bottom: 0.25rem;">Personal Token</label>
+                        <input type="password" placeholder="Your Lightspeed Personal Token" id="api-token" style="width: 100%; padding: 0.75rem; border: 2px solid #d1d5db; border-radius: 0.5rem; font-size: 1rem;">
+                    </div>
+                    
+                    <div style="background: #dbeafe; color: #1d4ed8; padding: 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; margin-bottom: 1rem; line-height: 1.4;">
+                        <strong>🔧 How to get your Personal Token:</strong><br>
+                        1. Log into your Lightspeed X dashboard<br>
+                        2. Go to <strong>Setup → Personal Tokens</strong><br>
+                        3. Click "<strong>Add Personal Token</strong>"<br>
+                        4. Set name to "SOMMa" and <strong>UNCHECK</strong> "Allow personal tokens to expire"<br>
+                        5. Click "<strong>Generate Personal Token</strong>" and copy it here
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="connectLightspeed()">
+                        🔗 Connect to Lightspeed X
+                    </button>
+                </div>
+
+                <div id="connection-result" style="background: #ecfdf5; border: 2px solid #22c55e; border-radius: 1rem; padding: 1rem; color: #15803d; font-weight: 500; display: none;">
+                    Connection status will appear here...
+                </div>
+            </div>
+        </div>
         <div id="results-screen" class="results-screen">
             <div class="results-header">
                 <h2>Recommendations</h2>
@@ -267,6 +335,29 @@
         function showSplash() { showScreen('splash-screen'); }
         function showCategories() { showScreen('category-screen'); }
         function showResults() { showScreen('results-screen'); }
+        function showInventory() { showScreen('inventory-screen'); }
+
+        // Connect to Lightspeed (placeholder function)
+        function connectLightspeed() {
+            const storeUrl = document.getElementById('store-url').value;
+            const apiToken = document.getElementById('api-token').value;
+            const result = document.getElementById('connection-result');
+            
+            if (!storeUrl || !apiToken) {
+                result.textContent = 'Please enter both your store URL and Personal Token.';
+                result.style.background = '#fef2f2';
+                result.style.borderColor = '#ef4444';
+                result.style.color = '#dc2626';
+                result.style.display = 'block';
+                return;
+            }
+            
+            result.textContent = '🔗 API connection feature coming soon! Using demo inventory for now.';
+            result.style.background = '#ecfdf5';
+            result.style.borderColor = '#22c55e';
+            result.style.color = '#15803d';
+            result.style.display = 'block';
+        }
 
         // Voice Recognition
         function startVoice() {
